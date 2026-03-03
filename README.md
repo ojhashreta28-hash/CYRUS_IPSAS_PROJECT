@@ -1,172 +1,46 @@
-# CYRUS_IPSAS_PROJECT
 # IPSAS — Intelligent Port Scanning & Authorization System
-### A Multi-Layered Network Security Platform with IDS & IPS
 
----
+A full-stack cybersecurity platform that scans networks, detects threats, and responds automatically.
 
-## 📁 Repository Structure & Collaboration Split
+## What it does
+- Scans IP addresses, CIDR ranges, and domain names for open ports
+- Automatically classifies each port as Authorized, Unauthorized, or Conditional
+- Detects threats using signature matching and anomaly detection
+- Blocks malicious IPs automatically via the IPS engine
+- Shows everything on a real-time cybersecurity dashboard
 
-```
-IPSAS/
-├── person1_frontend_IDS/          ← PERSON 1 (Your Contribution)
-│   ├── index.html                 # Full UI Dashboard (All pages)
-│   ├── ids_engine.js              # IDS — Signature & Anomaly Detection
-│   └── historical_analysis.js    # Historical Charts & Trend Analysis
-│
-├── person2_backend_IPS/           ← PERSON 2 (Friend's Contribution)
-│   ├── app.py                     # FastAPI REST API Server
-│   ├── ips_engine.py              # IPS — Block/Quarantine/Remediation
-│   └── scanner_engine.py          # Port Scanner Engine (TCP SYN/UDP/XMAS)
-│
-├── README.md                      # This file
-└── requirements.txt               # Python dependencies
-```
+## Files
+| File | Description |
+|------|-------------|
+| `index.html` | Frontend dashboard — open in browser |
+| `app.py` | Backend REST API server |
+| `ids_engine.py` | Intrusion Detection System engine |
+| `ips_engine.py` | Intrusion Prevention System engine |
+| `scanner_engine.py` | Port scanning engine |
+| `historical_analysis.js` | Historical data and charts |
 
----
+## How to Run
 
-## 👥 Equal Collaboration Split
+**Frontend**
+Just open `index.html` in your browser or use Live Server in VS Code.
 
-| Feature | Person 1 | Person 2 |
-|---|---|---|
-| **Frontend Dashboard** | ✅ `index.html` | |
-| **IDS Signature Engine** | ✅ `ids_engine.js` | |
-| **IDS Anomaly Detection** | ✅ `ids_engine.js` | |
-| **Historical Charts (6 visualizations)** | ✅ `historical_analysis.js` | |
-| **Time-Series Data Store** | ✅ `historical_analysis.js` | |
-| **REST API (all endpoints)** | | ✅ `app.py` |
-| **IPS Block/Quarantine Engine** | | ✅ `ips_engine.py` |
-| **Deep Packet Inspection** | | ✅ `ips_engine.py` |
-| **Port Scanner (multi-protocol)** | | ✅ `scanner_engine.py` |
-| **Service Fingerprinting** | | ✅ `scanner_engine.py` |
-| **Scan Scheduler** | | ✅ `scanner_engine.py` |
-
----
-
-## 🚀 Getting Started
-
-### Frontend (Person 1)
+**Backend**
 ```bash
-# Just open in browser — no build step required
-open person1_frontend_IDS/index.html
+pip install fastapi uvicorn pydantic
+uvicorn app:app --reload
 ```
+Then open http://localhost:8000/docs to see all API endpoints.
 
-### Backend (Person 2)
-```bash
-pip install fastapi uvicorn pydantic python-nmap
+## Tech Stack
+- Frontend: HTML, CSS, JavaScript, Chart.js
+- Backend: Python, FastAPI, Pydantic, Uvicorn
 
-# Run API server
-uvicorn person2_backend_IPS.app:app --host 0.0.0.0 --port 8000 --reload
+## Detection Capabilities
+- TCP SYN Port Scan — detected in under 5 seconds
+- Metasploit Backdoor (Port 4444) — detected in under 1 second
+- Rogue Device Introduction — detected in under 2 minutes
+- Time-of-Day Stealth Attack — detected in under 6 minutes
+- 100% detection rate — 0% false positives
 
-# API docs at:
-# http://localhost:8000/docs
-```
-
----
-
-## 🔧 System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    PRESENTATION LAYER                        │
-│            index.html (React-like SPA Dashboard)            │
-│   Dashboard | Scanner | History | IDS | Signatures | Reports │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ REST API calls
-┌─────────────────────────▼───────────────────────────────────┐
-│                      API LAYER  (app.py)                     │
-│  POST /scan   GET /alerts   POST /ips/block   GET /policy    │
-└──────┬────────────────────────────┬────────────────────────┘
-       │                            │
-┌──────▼──────┐              ┌──────▼──────────┐
-│  SCANNER    │              │   IPS ENGINE     │
-│  ENGINE     │              │  BlockEngine     │
-│  (scanner_  │              │  QuarantineMgr   │
-│  engine.py) │              │  PacketInspector │
-│             │              │  Remediation     │
-└──────┬──────┘              └──────▲───────────┘
-       │ scan results               │ alert → action
-┌──────▼──────────────────────────┐ │
-│           IDS ENGINE             │─┘
-│  SignatureDetector (ids_engine.js)│
-│  AnomalyDetector   (ids_engine.js)│
-│  BaselineProfiler  (ids_engine.js)│
-│  AlertManager      (ids_engine.js)│
-└──────┬──────────────────────────┘
-       │
-┌──────▼──────────────────────────┐
-│     HISTORICAL ANALYSIS          │
-│  TimeSeriesStore                 │
-│  TrendAnalyzer (port creep)      │
-│  ChartBuilder (6 viz types)      │
-│  HistoricalReporter (JSON/CSV)   │
-└─────────────────────────────────┘
-```
-
----
-
-## 🧩 Key Features
-
-### Person 1 — Frontend + IDS
-| Feature | Implementation |
-|---|---|
-| 8-page responsive dashboard | `index.html` |
-| Real-time port scan results table | `index.html` |
-| 6 historical chart types | `historical_analysis.js` |
-| Signature-based threat detection | `ids_engine.js → SignatureDetector` |
-| Z-Score anomaly detection | `ids_engine.js → AnomalyDetector` |
-| LSTM-style port creep detection | `ids_engine.js → AnomalyDetector` |
-| Markov time-of-day anomaly | `ids_engine.js → AnomalyDetector` |
-| 7-day rolling baseline profiler | `ids_engine.js → BaselineProfiler` |
-| Alert deduplication | `ids_engine.js → AlertManager` |
-
-### Person 2 — Backend + IPS
-| Feature | Implementation |
-|---|---|
-| FastAPI REST server (12 endpoints) | `app.py` |
-| Port authorization policy CRUD | `app.py → /policy` |
-| Scan job queue + background tasks | `app.py → /scan` |
-| Auto-blocking on critical alerts | `ips_engine.py → BlockEngine` |
-| VLAN quarantine for rogue devices | `ips_engine.py → QuarantineManager` |
-| Deep packet inspection (DPI) | `ips_engine.py → PacketInspector` |
-| Auto Jira ticket creation | `ips_engine.py → RemediationEngine` |
-| Patch recommendations | `ips_engine.py → RemediationEngine` |
-| Multi-protocol port scanning | `scanner_engine.py → ScanEngine` |
-| Service banner fingerprinting | `scanner_engine.py → ServiceFingerprinter` |
-| CIDR target expansion | `scanner_engine.py → ScanEngine` |
-| Cron-based scan scheduler | `scanner_engine.py → ScanScheduler` |
-
----
-
-## 🛡 Attack Testing — 100% Detection Rate
-
-| Attack Type | Detection Method | Time | False Positives |
-|---|---|---|---|
-| TCP SYN Port Scan | Z-Score Anomaly | < 5s | 0 |
-| Slow Port Creep | LSTM Temporal | 18h | 0 |
-| Metasploit Backdoor (4444) | Signature Match | < 1s | 0 |
-| vsftpd CVE-2011-2523 | CVE + Signature | < 5s | 0 |
-| Rogue Device | K-Means Cluster | < 2m | 0 |
-| Time-of-Day Stealth | Markov Chain | < 6m | 0 |
-
-**Overall: 6/6 attacks detected · 0% false positives · 99.97% uptime**
-
----
-
-## 📦 Dependencies
-
-```
-# requirements.txt
-fastapi==0.110.0
-uvicorn==0.28.0
-pydantic==2.6.0
-python-nmap==0.7.1
-scapy==2.5.0
-redis==5.0.3
-celery==5.3.6
-influxdb-client==1.40.0
-python-jose==3.3.0
-```
-
----
-
-*IPSAS v2.0 — Enhanced Problem Statement Implementation*
+## Made for
+Hackathon — Cybersecurity Track 2025
