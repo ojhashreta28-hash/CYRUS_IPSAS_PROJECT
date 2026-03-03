@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPSAS - Intelligent Port Scanning & Authorization System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg-dark: #020b18;
+    --bg-panel: #041525;
+    --bg-card: #062035;
+    --accent-cyan: #00f5ff;
+    --accent-green: #00ff88;
+    --accent-red: #ff2d55;
+    --accent-orange: #ff9500;
+    --accent-yellow: #ffd60a;
+    --text-primary: #e0f4ff;
+    --text-secondary: #7ab8d4;
+    --border: rgba(0,245,255,0.2);
+    --glow-cyan: 0 0 20px rgba(0,245,255,0.4);
+    --glow-red: 0 0 20px rgba(255,45,85,0.5);
+    --glow-green: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,245,255,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.02) 0%, transparent 50%);
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #020e1f 0%, #041a2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(0,245,255,0.1);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--accent-cyan);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%,100% { box-shadow: var(--glow-cyan); }
+    50% { box-shadow: 0 0 40px rgba(0,245,255,0.7); }
+  }
+
+  .logo-text h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 3px;
+  }
+
+  .logo-text span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    display: block;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-green);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .header-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* SIDEBAR */
+  aside {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+  }
+
+  .nav-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .nav-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    padding: 0 1.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.6;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-left: 3px solid transparent;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    color: var(--accent-cyan);
+    background: rgba(0,245,255,0.05);
+    border-left-color: var(--accent-cyan);
+  }
+
+  .nav-item .nav-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent-red);
+    color: white;
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: var(--glow-red);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  /* PAGE SECTIONS */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 15px var(--accent);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,245,255,0.15);
+  }
+
+  .stat-card.cyan { --accent: var(--accent-cyan); }
+  .stat-card.green { --accent: var(--accent-green); }
+  .stat-card.red { --accent: var(--accent-red); }
+  .stat-card.orange { --accent: var(--accent-orange); }
+
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-sub .up { color: var(--accent-green); }
+  .stat-sub .down { color: var(--accent-red); }
+
+  /* PANELS */
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,245,255,0.03);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-cyan);
+  }
+
+  .panel-body { padding: 1.25rem; }
+
+  /* SCAN TABLE */
+  .scan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .scan-table th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,245,255,0.03);
+  }
+
+  .scan-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,245,255,0.05);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    vertical-align: middle;
+  }
+
+  .scan-table tr:hover td { background: rgba(0,245,255,0.04); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .badge.authorized { background: rgba(0,255,136,0.15); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.3); }
+  .badge.unauthorized { background: rgba(255,45,85,0.15); color: var(--accent-red); border: 1px solid rgba(255,45,85,0.3); animation: blink 2s infinite; }
+  .badge.conditional { background: rgba(255,149,0,0.15); color: var(--accent-orange); border: 1px solid rgba(255,149,0,0.3); }
+  .badge.critical { background: rgba(255,45,85,0.25); color: var(--accent-red); border: 1px solid var(--accent-red); box-shadow: var(--glow-red); }
+  .badge.open { background: rgba(0,245,255,0.1); color: var(--accent-cyan); border: 1px solid rgba(0,245,255,0.3); }
+  .badge.closed { background: rgba(255,255,255,0.05); color: #888; border: 1px solid #333; }
+  .badge.filtered { background: rgba(255,149,0,0.1); color: var(--accent-orange); border: 1px solid rgba(255,149,0,0.3); }
+
+  .risk-low { color: var(--accent-green); }
+  .risk-medium { color: var(--accent-yellow); }
+  .risk-high { color: var(--accent-orange); }
+  .risk-critical { color: var(--accent-red); text-shadow: var(--glow-red); }
+
+  /* ALERT LIST */
+  .alert-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .alert-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--color);
+    background: rgba(255,255,255,0.02);
+    transition: all 0.2s;
+    cursor: pointer;
+    align-items: flex-start;
+  }
+
+  .alert-item:hover { background: rgba(255,255,255,0.05); transform: translateX(3px); }
+  .alert-item.critical { --color: var(--accent-red); }
+  .alert-item.high { --color: var(--accent-orange); }
+  .alert-item.medium { --color: var(--accent-yellow); }
+  .alert-item.low { --color: var(--accent-green); }
+
+  .alert-icon { font-size: 18px; margin-top: 1px; }
+  .alert-body { flex: 1; }
+
+  .alert-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+
+  .alert-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .alert-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* SCAN FORM */
+  .scan-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-group label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  .form-group input, .form-group select {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 2px rgba(0,245,255,0.1);
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    outline: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent-cyan);
+    color: var(--bg-dark);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .btn-primary:hover {
+    background: #00d4e0;
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px rgba(0,245,255,0.6);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+  }
+
+  .btn-danger:hover {
+    background: rgba(255,45,85,0.1);
+    box-shadow: var(--glow-red);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent-cyan);
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+
+  .btn-ghost:hover { border-color: var(--accent-cyan); background: rgba(0,245,255,0.05); }
+
+  /* SCANNING ANIMATION */
+  .scan-progress {
+    display: none;
+    margin: 1rem 0;
+  }
+
+  .scan-progress.active { display: block; }
+
+  .progress-bar {
+    background: var(--bg-panel);
+    border-radius: 4px;
+    height: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+    border-radius: 4px;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-cyan);
+  }
+
+  .progress-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    margin-bottom: 4px;
+  }
+
+  /* CHARTS */
+  .chart-container { position: relative; height: 220px; }
+
+  /* IDS ALERTS TABLE */
+  .ids-alert {
+    animation: slide-in 0.4s ease-out;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* PAGE TITLE */
+  .page-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+  }
+
+  .page-title span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* NETWORK MAP */
+  #networkCanvas {
+    width: 100%;
+    height: 300px;
+    background: var(--bg-panel);
+    border-radius: 8px;
+  }
+
+  /* RISK METER */
+  .risk-meter {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+  }
+
+  .risk-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    box-shadow: 0 0 20px rgba(255,149,0,0.3);
+    flex-shrink: 0;
+  }
+
+  .risk-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent-orange);
+    line-height: 1;
+  }
+
+  .risk-label-sm {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  /* SPARKLINE */
+  .sparkline { 
+    width: 60px; 
+    height: 30px; 
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* FULL TABLE */
+  .full-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* HISTORICAL CHARTS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .chart-card-wide {
+    grid-column: 1 / -1;
+  }
+
+  /* IDS specific */
+  .threat-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255,45,85,0.08);
+    border: 1px solid rgba(255,45,85,0.2);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .threat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-red);
+    animation: blink 1s infinite;
+    flex-shrink: 0;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .panel-grid { grid-template-columns: 1fr; }
+  }
+
+  /* SCAN MODE TOGGLE */
+  .scan-mode-btn {
+    padding: 7px 18px;
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .scan-mode-btn.active {
+    background: rgba(0,245,255,0.1);
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 12px rgba(0,245,255,0.2);
+  }
+  .scan-mode-btn:hover:not(.active) {
+    border-color: var(--accent-cyan);
+    color: var(--text-primary);
+  }
+
+  /* EXAMPLE CHIPS */
+  .example-chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    background: rgba(0,245,255,0.06);
+    border: 1px solid rgba(0,245,255,0.15);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .example-chip:hover {
+    background: rgba(0,245,255,0.14);
+    color: var(--accent-cyan);
+    border-color: rgba(0,245,255,0.35);
+  }
+
+  /* DNS BADGE */
+  .dns-ip-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--accent-green);
+  }
+
+  .whois-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .whois-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .whois-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  /* Terminal style log */
+  .terminal {
+    background: #000;
+    border: 1px solid rgba(0,255,136,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-green);
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+
+  .terminal .log-line { opacity: 0; animation: fade-in 0.3s forwards; }
+  @keyframes fade-in { to { opacity: 1; } }
+  .terminal .log-warn { color: var(--accent-orange); }
+  .terminal .log-error { color: var(--accent-red); }
+  .terminal .log-info { color: var(--accent-cyan); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">IPS</div>
+    <div class="logo-text">
+      <h1>IPSAS</h1>
+      <span>INTELLIGENT PORT SCANNING & AUTHORIZATION SYSTEM</span>
+    </div>
+  </div>
+  <div class="header-status">
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      ALL ENGINES ACTIVE
+    </div>
+    <div class="status-badge" style="color: var(--accent-orange)">
+      <div class="status-dot" style="background: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange)"></div>
+      3 ACTIVE THREATS
+    </div>
+    <div class="header-time" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="nav-section">
+      <div class="nav-label">MONITORING</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="navigate('scanner')">
+        <span class="nav-icon">⊕</span> Port Scanner
+      </div>
+      <div class="nav-item" onclick="navigate('history')">
+        <span class="nav-icon">◈</span> Historical Analysis
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">DETECTION</div>
+      <div class="nav-item" onclick="navigate('ids')">
+        <span class="nav-icon">⚡</span> IDS Engine <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="navigate('signatures')">
+        <span class="nav-icon">◉</span> Signatures DB
+      </div>
+      <div class="nav-item" onclick="navigate('anomaly')">
+        <span class="nav-icon">⊗</span> Anomaly Engine
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">AUTHORIZATION</div>
+      <div class="nav-item" onclick="navigate('authorization')">
+        <span class="nav-icon">◎</span> Port Policies
+      </div>
+      <div class="nav-item" onclick="navigate('network')">
+        <span class="nav-icon">⊞</span> Network Map
+      </div>
+      <div class="nav-item" onclick="navigate('reports')">
+        <span class="nav-icon">⊟</span> Reports
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-title">
+        <div>
+          <h2>SECURITY OVERVIEW</h2>
+          <span>Real-time network security posture — Last scan: <span id="last-scan">2 min ago</span></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="exportReport()">⬇ EXPORT</button>
+          <button class="btn btn-primary" onclick="runQuickScan()">▶ QUICK SCAN</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">HOSTS MONITORED</div>
+          <div class="stat-value" id="stat-hosts">247</div>
+          <div class="stat-sub"><span class="up">↑ 12</span> from last week</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">AUTHORIZED PORTS</div>
+          <div class="stat-value" id="stat-auth">1,842</div>
+          <div class="stat-sub"><span class="up">↑ 3</span> newly approved</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">UNAUTHORIZED PORTS</div>
+          <div class="stat-value" id="stat-unauth">17</div>
+          <div class="stat-sub"><span class="down">↑ 4</span> since yesterday</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">ACTIVE THREATS</div>
+          <div class="stat-value" id="stat-threats">3</div>
+          <div class="stat-sub">Requires immediate action</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">OPEN PORTS TIMELINE</span>
+            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px">7D ▾</button>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">RECENT ALERTS</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent-red)">● LIVE</span>
+          </div>
+          <div class="panel-body">
+            <div class="alert-list" id="alertList">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">PORT STATUS DISTRIBUTION</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="distChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">ATTACK SURFACE TREND</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="surfaceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PORT SCANNER PAGE -->
+    <div id="page-scanner" class="page">
+      <div class="page-title">
+        <div>
+          <h2>PORT SCANNER</h2>
+          <span>Multi-protocol scanning: TCP SYN, UDP, SCTP, XMAS — supports IP, CIDR, and URL/domain</span>
+        </div>
+      </div>
+
+      <!-- Target type toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:0.75rem">
+        <button class="scan-mode-btn active" id="modeIP" onclick="setScanMode('ip')">⬡ IP / CIDR</button>
+        <button class="scan-mode-btn" id="modeURL" onclick="setScanMode('url')">🌐 URL / DOMAIN</button>
+      </div>
+
+      <!-- Quick example chips — shown per mode -->
+      <div id="ip-examples" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);align-self:center;letter-spacing:1px">EXAMPLES:</span>
+        <span class="example-chip" onclick="quickFill('192.168.1.0/24')">192.168.1.0/24</span>
+        <span class="example-chip" onclick="quickFill('10.0.1.108')">10.0.1.108</span>
+        <span class="example-chip" onclick="quickFill('192.168.1.105')">192.168.1.105</span>
+      </div>
+      <div id="url-examples" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:1rem">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);align-self:center;letter-spacing:1px">TRY A DOMAIN:</span>
+        <span class="example-chip" onclick="quickFill('github.com')">github.com</span>
+        <span class="example-chip" onclick="quickFill('google.com')">google.com</span>
+        <span class="example-chip" onclick="quickFill('cloudflare.com')">cloudflare.com</span>
+        <span class="example-chip" onclick="quickFill('microsoft.com')">microsoft.com</span>
+        <span class="example-chip" onclick="quickFill('amazon.com')">amazon.com</span>
+        <span class="example-chip" onclick="quickFill('https://github.com/user/repo')">https://github.com/user/repo</span>
+      </div>
+
+      <div class="scan-form" style="grid-template-columns:1fr 1fr 1fr auto">
+        <div class="form-group">
+          <label id="targetLabel">TARGET IP / CIDR RANGE</label>
+          <input type="text" id="scan-target" placeholder="e.g. 192.168.1.0/24" value="192.168.1.0/24">
+        </div>
+        <div class="form-group">
+          <label>PORT RANGE</label>
+          <input type="text" id="scan-ports" placeholder="e.g. 1-1024 or 22,80,443" value="1-1024">
+        </div>
+        <div class="form-group">
+          <label>SCAN TYPE</label>
+          <select id="scan-type">
+            <option value="syn">TCP SYN Scan</option>
+            <option value="udp">UDP Scan</option>
+            <option value="xmas">XMAS Scan</option>
+            <option value="comprehensive">Comprehensive</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="startScan()">▶ SCAN NOW</button>
+      </div>
+
+      <!-- DNS Resolution banner (shown for URL mode) -->
+      <div id="dnsResolutionBox" style="display:none;margin-bottom:1rem">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary);letter-spacing:1px;margin-bottom:10px">DNS RESOLUTION</div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-secondary)">INPUT:</span>
+              <span id="dnsOriginal" style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent-cyan)">—</span>
+            </div>
+            <span style="color:var(--text-secondary);font-size:18px">→</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-secondary)">RESOLVED IP:</span>
+              <span id="dnsResolved" style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent-green);font-weight:700">resolving...</span>
+            </div>
+            <div id="dnsAllIPs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+            <div id="dnsStatus" style="margin-left:auto"></div>
+          </div>
+          <!-- WHOIS strip -->
+          <div id="whoisStrip" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);gap:2rem;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
+      <div class="scan-progress" id="scanProgress">
+        <div class="progress-text" id="progressText">Initializing scan...</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="full-panel">
+        <div class="panel-header">
+          <span class="panel-title">SCAN RESULTS</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary)" id="scan-target-display"></span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary)" id="scan-count">No results yet</span>
+          </div>
+        </div>
+        <table class="scan-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>HOST / IP</th>
+              <th>DOMAIN</th>
+              <th>PORT</th>
+              <th>PROTOCOL</th>
+              <th>SERVICE</th>
+              <th>VERSION</th>
+              <th>STATE</th>
+              <th>AUTHORIZATION</th>
+              <th>RISK</th>
+            </tr>
+          </thead>
+          <tbody id="scanResults">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HISTORICAL ANALYSIS PAGE -->
+    <div id="page-history" class="page">
+      <div class="page-title">
+        <div>
+          <h2>HISTORICAL ANALYSIS</h2>
+          <span>Temporal trends, graphical visualizations, and baseline deviation tracking</span>
+        </div>
+        <button class="btn btn-ghost">⬇ EXPORT PDF</button>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="panel-header">
+            <span class="panel-title">PORT STATE TIMELINE — 192.168.1.105</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="histTimelineChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="panel-header">
+            <span class="panel-title">RISK SCORE HEATMAP (SUBNETS)</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="heatmapChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card chart-card-wide">
+          <div class="panel-header">
+            <span class="panel-title">ATTACK SURFACE TREND — WEEK OVER WEEK</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="wowChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="panel-header">
+            <span class="panel-title">MOST COMMON OPEN PORTS</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="freqChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="panel-header">
+            <span class="panel-title">UNAUTHORIZED PORT HISTORY</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:200px">
+              <canvas id="unauthHistChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDS ENGINE PAGE -->
+    <div id="page-ids" class="page">
+      <div class="page-title">
+        <div>
+          <h2>IDS ENGINE — INTRUSION DETECTION</h2>
+          <span>Real-time signature + anomaly-based detection with alert correlation</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="status-badge" style="color:var(--accent-red)">
+            <div class="status-dot" style="background:var(--accent-red);box-shadow:0 0 10px var(--accent-red)"></div>
+            3 ACTIVE INTRUSIONS
+          </span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card red">
+          <div class="stat-label">SIGNATURES MATCHED</div>
+          <div class="stat-value" style="font-size:24px">28</div>
+          <div class="stat-sub">Today</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">ANOMALIES DETECTED</div>
+          <div class="stat-value" style="font-size:24px">7</div>
+          <div class="stat-sub">Behavioral deviations</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-label">DETECTION RATE</div>
+          <div class="stat-value" style="font-size:24px">100%</div>
+          <div class="stat-sub">6/6 test attacks</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">FALSE POSITIVES</div>
+          <div class="stat-value" style="font-size:24px">0%</div>
+          <div class="stat-sub">Zero false alerts</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">ACTIVE INTRUSION ALERTS</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent-red)">● LIVE FEED</span>
+          </div>
+          <div class="panel-body">
+            <div id="ids-alerts">
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">DETECTION ENGINE LOG</span>
+          </div>
+          <div class="panel-body">
+            <div class="terminal" id="ids-terminal"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="full-panel">
+        <div class="panel-header">
+          <span class="panel-title">INTRUSION DETECTION — FULL EVENT TABLE</span>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px">FILTER ▾</button>
+        </div>
+        <table class="scan-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>TIMESTAMP</th>
+              <th>SOURCE IP</th>
+              <th>DEST PORT</th>
+              <th>ATTACK TYPE</th>
+              <th>DETECTION METHOD</th>
+              <th>SEVERITY</th>
+              <th>STATUS</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="ids-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SIGNATURES DB PAGE -->
+    <div id="page-signatures" class="page">
+      <div class="page-title">
+        <div>
+          <h2>SIGNATURES DATABASE</h2>
+          <span>Known threat signatures, CVE mappings, malicious port profiles</span>
+        </div>
+        <button class="btn btn-primary">⬆ UPLOAD CUSTOM</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">TOTAL SIGNATURES</div>
+          <div class="stat-value" style="font-size:24px">4,891</div>
+          <div class="stat-sub">Updated 2h ago</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">CVE MAPPINGS</div>
+          <div class="stat-value" style="font-size:24px">2,341</div>
+          <div class="stat-sub">NVD + Exploit-DB</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">BACKDOOR PROFILES</div>
+          <div class="stat-value" style="font-size:24px">189</div>
+          <div class="stat-sub">RATs, Trojans, C2</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">CUSTOM IOCs</div>
+          <div class="stat-value" style="font-size:24px">47</div>
+          <div class="stat-sub">User-defined YARA</div>
+        </div>
+      </div>
+
+      <div class="full-panel">
+        <div class="panel-header">
+          <span class="panel-title">SIGNATURE LIBRARY</span>
+        </div>
+        <table class="scan-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>SIG ID</th>
+              <th>CATEGORY</th>
+              <th>PORT / PATTERN</th>
+              <th>CVE REF</th>
+              <th>SEVERITY</th>
+              <th>ACTION</th>
+              <th>LAST MATCHED</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="sig-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANOMALY ENGINE PAGE -->
+    <div id="page-anomaly" class="page">
+      <div class="page-title">
+        <div>
+          <h2>ANOMALY DETECTION ENGINE</h2>
+          <span>AI-powered behavioral analysis using ML models</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">ISOLATION FOREST</div>
+          <div class="stat-value" style="font-size:24px">Active</div>
+          <div class="stat-sub" style="color:var(--accent-green)">● Running</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">LSTM NETWORK</div>
+          <div class="stat-value" style="font-size:24px">Active</div>
+          <div class="stat-sub" style="color:var(--accent-green)">● Running</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">K-MEANS CLUSTER</div>
+          <div class="stat-value" style="font-size:24px">Active</div>
+          <div class="stat-sub" style="color:var(--accent-green)">● Running</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">BASELINE PERIOD</div>
+          <div class="stat-value" style="font-size:24px">7 Days</div>
+          <div class="stat-sub">Established</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">ANOMALY DETECTION CHART</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" style="height:220px">
+              <canvas id="anomalyChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">DETECTED ANOMALY TYPES</span>
+          </div>
+          <div class="panel-body">
+            <div id="anomaly-types"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTHORIZATION PAGE -->
+    <div id="page-authorization" class="page">
+      <div class="page-title">
+        <div>
+          <h2>PORT AUTHORIZATION POLICIES</h2>
+          <span>Policy-based classification, risk scoring, CMDB integration</span>
+        </div>
+        <button class="btn btn-primary">+ ADD POLICY</button>
+      </div>
+
+      <div class="full-panel">
+        <div class="panel-header">
+          <span class="panel-title">AUTHORIZATION RULES</span>
+        </div>
+        <table class="scan-table" style="width:100%">
+          <thead>
+            <tr>
+              <th>PORT</th>
+              <th>SERVICE</th>
+              <th>IP RANGE</th>
+              <th>STATUS</th>
+              <th>RISK LEVEL</th>
+              <th>OWNER</th>
+              <th>LAST REVIEWED</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="auth-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NETWORK MAP PAGE -->
+    <div id="page-network" class="page">
+      <div class="page-title">
+        <div>
+          <h2>NETWORK SERVICE MAP</h2>
+          <span>Host topology, open services, lateral movement risk paths</span>
+        </div>
+      </div>
+      <div class="full-panel">
+        <div class="panel-body">
+          <canvas id="networkCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" class="page">
+      <div class="page-title">
+        <div>
+          <h2>REPORTS & COMPLIANCE</h2>
+          <span>PCI-DSS, HIPAA, ISO 27001, NIST compliance evidence</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">PCI-DSS COMPLIANCE</div>
+          <div class="stat-value" style="font-size:24px">94%</div>
+          <div class="stat-sub" style="color:var(--accent-green)">● Passing</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-label">HIPAA COMPLIANCE</div>
+          <div class="stat-value" style="font-size:24px">98%</div>
+          <div class="stat-sub" style="color:var(--accent-green)">● Passing</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">ISO 27001</div>
+          <div class="stat-value" style="font-size:24px">91%</div>
+          <div class="stat-sub" style="color:var(--accent-yellow)">⚠ Review</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">NIST CSF</div>
+          <div class="stat-value" style="font-size:24px">89%</div>
+          <div class="stat-sub" style="color:var(--accent-yellow)">⚠ 2 gaps</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">AVAILABLE REPORTS</span></div>
+          <div class="panel-body">
+            <div id="report-list"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">ATTACK TEST RESULTS SUMMARY</span></div>
+          <div class="panel-body">
+            <table class="scan-table" style="width:100%">
+              <thead><tr><th>ATTACK</th><th>DETECTED</th><th>TIME</th><th>FP</th></tr></thead>
+              <tbody id="test-results"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ===== CLOCK =====
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12: false});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== NAVIGATION =====
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  // Init charts when navigating to pages
+  if (page === 'history') initHistoryCharts();
+  if (page === 'anomaly') initAnomalyChart();
+  if (page === 'network') drawNetworkMap();
+  if (page === 'ids') initIDSPage();
+  if (page === 'signatures') populateSigTable();
+  if (page === 'authorization') populateAuthTable();
+  if (page === 'reports') populateReports();
+}
+
+// ===== SAMPLE DATA =====
+const scanData = [
+  { ip: '192.168.1.105', port: 22, proto: 'TCP', service: 'SSH', version: 'OpenSSH 8.9', state: 'open', auth: 'authorized', risk: 'low' },
+  { ip: '192.168.1.105', port: 80, proto: 'TCP', service: 'HTTP', version: 'nginx 1.18.0', state: 'open', auth: 'authorized', risk: 'medium' },
+  { ip: '192.168.1.105', port: 443, proto: 'TCP', service: 'HTTPS', version: 'nginx 1.18.0', state: 'open', auth: 'authorized', risk: 'low' },
+  { ip: '192.168.1.108', port: 4444, proto: 'TCP', service: '???', version: 'Metasploit rev_tcp', state: 'open', auth: 'unauthorized', risk: 'critical' },
+  { ip: '192.168.1.120', port: 3306, proto: 'TCP', service: 'MySQL', version: '8.0.32', state: 'open', auth: 'conditional', risk: 'high' },
+  { ip: '192.168.1.130', port: 21, proto: 'TCP', service: 'FTP', version: 'vsftpd 2.3.4', state: 'open', auth: 'unauthorized', risk: 'critical' },
+  { ip: '192.168.1.145', port: 8080, proto: 'TCP', service: 'HTTP-Proxy', version: 'unknown', state: 'open', auth: 'unauthorized', risk: 'high' },
+  { ip: '192.168.1.155', port: 31337, proto: 'TCP', service: 'Back Orifice', version: 'unknown', state: 'open', auth: 'unauthorized', risk: 'critical' },
+  { ip: '192.168.1.160', port: 53, proto: 'UDP', service: 'DNS', version: 'BIND 9.18', state: 'open', auth: 'authorized', risk: 'low' },
+  { ip: '192.168.1.170', port: 25, proto: 'TCP', service: 'SMTP', version: 'Postfix 3.7', state: 'open', auth: 'authorized', risk: 'medium' },
+  { ip: '192.168.1.200', port: 12345, proto: 'TCP', service: 'NetBus', version: 'NetBus banner', state: 'open', auth: 'unauthorized', risk: 'critical' },
+  { ip: '192.168.1.220', port: 5900, proto: 'TCP', service: 'VNC', version: 'RealVNC 6.7', state: 'filtered', auth: 'conditional', risk: 'medium' },
+];
+
+const idsAlerts = [
+  { id: 'IDS-001', time: '03:00:14', src: '10.0.3.44', dport: 8443, type: 'Time-of-Day Anomaly', method: 'Markov Chain', sev: 'critical', status: 'active' },
+  { id: 'IDS-002', time: '02:47:31', src: '10.0.1.108', dport: 4444, type: 'Metasploit Backdoor', method: 'Signature Match', sev: 'critical', status: 'active' },
+  { id: 'IDS-003', time: '01:33:09', src: '10.0.2.55', dport: 21, type: 'CVE-2011-2523 Exploit', method: 'CVE + Signature', sev: 'high', status: 'active' },
+  { id: 'IDS-004', time: '00:12:45', src: '10.0.1.77', dport: 1-65535, type: 'TCP SYN Port Scan', method: 'Z-Score Anomaly', sev: 'high', status: 'mitigated' },
+  { id: 'IDS-005', time: 'yesterday', src: '10.0.3.12', dport: 22, type: 'Rogue Device Detected', method: 'K-Means Cluster', sev: 'medium', status: 'investigating' },
+  { id: 'IDS-006', time: '2d ago', src: '10.0.1.0/24', dport: 'multi', type: 'Slow Port Creep', method: 'LSTM Temporal', sev: 'medium', status: 'mitigated' },
+];
+
+const sigData = [
+  { id: 'SIG-4444', cat: 'Known Backdoor Port', pattern: 'Port 4444', cve: 'N/A', sev: 'critical', action: 'Critical Alert + Block', last: '2h ago', status: 'active' },
+  { id: 'SIG-VSFTPD', cat: 'Vulnerable Service', pattern: 'vsftpd 2.3.4 banner', cve: 'CVE-2011-2523', sev: 'high', action: 'High Alert + CVE link', last: '6h ago', status: 'active' },
+  { id: 'SIG-NETBUS', cat: 'Trojan Fingerprint', pattern: 'NetBus banner port 12345', cve: 'N/A', sev: 'critical', action: 'Immediate Isolation', last: '1d ago', status: 'active' },
+  { id: 'SIG-MISMATCH', cat: 'Protocol Mismatch', pattern: 'HTTP on port 22', cve: 'N/A', sev: 'medium', action: 'Investigation Flag', last: '3d ago', status: 'active' },
+  { id: 'SIG-SSL-CERT', cat: 'Expired Certificate', pattern: 'TLS cert exp. on 443', cve: 'N/A', sev: 'medium', action: 'Compliance Flag', last: '4d ago', status: 'active' },
+  { id: 'SIG-BACKOR', cat: 'Known Backdoor', pattern: 'Port 31337 Back Orifice', cve: 'N/A', sev: 'critical', action: 'Critical Alert + Block', last: '1d ago', status: 'active' },
+  { id: 'SIG-MSFT-MS17', cat: 'CVE Profile', pattern: 'SMB port 445 EternalBlue', cve: 'CVE-2017-0144', sev: 'critical', action: 'Immediate Isolate', last: '5d ago', status: 'active' },
+];
+
+const authPolicies = [
+  { port: 22, service: 'SSH', range: '10.0.0.0/8', status: 'authorized', risk: 'low', owner: 'DevOps Team', reviewed: '2025-01-15' },
+  { port: 80, service: 'HTTP', range: '0.0.0.0/0', status: 'authorized', risk: 'medium', owner: 'Web Team', reviewed: '2025-01-10' },
+  { port: 443, service: 'HTTPS', range: '0.0.0.0/0', status: 'authorized', risk: 'low', owner: 'Web Team', reviewed: '2025-01-10' },
+  { port: 3306, service: 'MySQL', range: '10.0.1.0/24', status: 'conditional', risk: 'high', owner: 'DB Admin', reviewed: '2024-12-20' },
+  { port: 4444, service: 'Unknown', range: 'any', status: 'unauthorized', risk: 'critical', owner: 'UNREGISTERED', reviewed: 'Never' },
+  { port: 21, service: 'FTP', range: 'any', status: 'unauthorized', risk: 'critical', owner: 'UNREGISTERED', reviewed: 'Never' },
+  { port: 8443, service: 'HTTPS-Alt', range: '10.0.0.0/8', status: 'authorized', risk: 'medium', owner: 'AppSec', reviewed: '2025-01-05' },
+  { port: 5900, service: 'VNC', range: '10.0.1.0/24', status: 'conditional', risk: 'medium', owner: 'IT Support', reviewed: '2024-11-30' },
+];
+
+// ===== DASHBOARD CHARTS =====
+function initDashboard() {
+  const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  // Timeline chart
+  const ctx1 = document.getElementById('timelineChart').getContext('2d');
+  new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Open Ports', data: [1820,1835,1848,1842,1859,1842,1842], borderColor: '#00f5ff', backgroundColor: 'rgba(0,245,255,0.1)', fill: true, tension: 0.4, borderWidth: 2 },
+        { label: 'Unauthorized', data: [8,10,12,13,15,14,17], borderColor: '#ff2d55', backgroundColor: 'rgba(255,45,85,0.1)', fill: true, tension: 0.4, borderWidth: 2, yAxisID: 'y1' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7ab8d4', font: { family: 'Rajdhani' } } } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y1: { position: 'right', ticks: { color: '#ff2d55' }, grid: { drawOnChartArea: false } } } }
+  });
+
+  // Dist chart
+  const ctx2 = document.getElementById('distChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['Authorized','Unauthorized','Conditional','Critical'],
+      datasets: [{ data: [1842,17,34,6], backgroundColor: ['rgba(0,255,136,0.8)','rgba(255,45,85,0.8)','rgba(255,149,0,0.8)','rgba(255,45,85,0.4)'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { labels: { color: '#7ab8d4', font: { family: 'Rajdhani' } } } } }
+  });
+
+  // Surface chart
+  const ctx3 = document.getElementById('surfaceChart').getContext('2d');
+  new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: ['W1','W2','W3','W4','W5','W6','W7','W8'],
+      datasets: [{ label: 'Attack Surface', data: [2200,2150,2180,2100,2090,2140,2160,2130], borderColor: '#ff9500', backgroundColor: 'rgba(255,149,0,0.15)', fill: true, tension: 0.4, borderWidth: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7ab8d4', font: { family: 'Rajdhani' } } } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  // Alerts
+  const alerts = [
+    { type: 'critical', icon: '🔴', title: 'Metasploit Backdoor — Port 4444', meta: '10.0.1.108 → Critical Signature Match', time: '2 min ago' },
+    { type: 'critical', icon: '🔴', title: 'Back Orifice Detected — Port 31337', meta: '192.168.1.155 → Trojan Fingerprint', time: '14 min ago' },
+    { type: 'high', icon: '🟠', title: 'CVE-2011-2523 vsftpd Exploit', meta: '10.0.2.55 → Port 21 CVSS 10.0', time: '1h ago' },
+    { type: 'high', icon: '🟠', title: 'TCP SYN Scan Detected', meta: '10.0.3.44 → 65535 ports in 2s', time: '3h ago' },
+    { type: 'medium', icon: '🟡', title: 'Time-of-Day Anomaly — Port 8443', meta: '10.0.1.19 → Activity at 3:00 AM', time: '5h ago' },
+  ];
+  const list = document.getElementById('alertList');
+  list.innerHTML = alerts.map(a => `
+    <div class="alert-item ${a.type}">
+      <span class="alert-icon">${a.icon}</span>
+      <div class="alert-body">
+        <div class="alert-title">${a.title}</div>
+        <div class="alert-meta">${a.meta}</div>
+      </div>
+      <span class="alert-time">${a.time}</span>
+    </div>
+  `).join('');
+
+  populateScanTable(scanData, null);
+}
+
+// ===== SCAN TABLE =====
+function populateScanTable(data, domainLabel) {
+  const tbody = document.getElementById('scanResults');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td style="font-family:'Share Tech Mono',monospace">${r.ip}</td>
+      <td style="font-family:'Share Tech Mono',monospace;color:var(--accent-cyan)">${domainLabel || r.domain || '—'}</td>
+      <td style="font-weight:700;color:var(--accent-cyan)">${r.port}</td>
+      <td>${r.proto}</td>
+      <td>${r.service}</td>
+      <td style="color:var(--text-secondary)">${r.version}</td>
+      <td><span class="badge ${r.state}">${r.state.toUpperCase()}</span></td>
+      <td><span class="badge ${r.auth}">${r.auth.toUpperCase()}</span></td>
+      <td class="risk-${r.risk}">${r.risk.toUpperCase()}</td>
+    </tr>
+  `).join('');
+  document.getElementById('scan-count').textContent = `Showing ${data.length} results`;
+}
+
+// ===== URL / DOMAIN RESOLVER =====
+const DNS_MOCK = {
+  'google.com':        { ips: ['142.250.195.46','142.250.195.78'], org: 'Google LLC',           country: 'US', asn: 'AS15169' },
+  'github.com':        { ips: ['140.82.121.4'],                    org: 'GitHub Inc.',           country: 'US', asn: 'AS36459' },
+  'facebook.com':      { ips: ['157.240.241.35','157.240.0.35'],   org: 'Meta Platforms Inc.',  country: 'US', asn: 'AS32934' },
+  'amazon.com':        { ips: ['54.239.28.85','205.251.242.103'],  org: 'Amazon.com Inc.',      country: 'US', asn: 'AS16509' },
+  'microsoft.com':     { ips: ['20.112.52.29','20.81.111.85'],     org: 'Microsoft Corp.',      country: 'US', asn: 'AS8075'  },
+  'cloudflare.com':    { ips: ['104.16.132.229','104.16.133.229'], org: 'Cloudflare Inc.',      country: 'US', asn: 'AS13335' },
+  'example.com':       { ips: ['93.184.216.34'],                   org: 'EDGECAST Inc.',        country: 'US', asn: 'AS15133' },
+  'stackoverflow.com': { ips: ['151.101.1.69','151.101.65.69'],    org: 'Fastly Inc.',          country: 'US', asn: 'AS54113' },
+  'twitter.com':       { ips: ['104.244.42.65','104.244.42.1'],    org: 'Twitter Inc.',         country: 'US', asn: 'AS13414' },
+  'youtube.com':       { ips: ['142.250.195.110'],                  org: 'Google LLC',           country: 'US', asn: 'AS15169' },
+  'linkedin.com':      { ips: ['13.107.42.14'],                    org: 'Microsoft Corp.',      country: 'US', asn: 'AS8075'  },
+  'instagram.com':     { ips: ['157.240.241.174'],                 org: 'Meta Platforms Inc.',  country: 'US', asn: 'AS32934' },
+  'netflix.com':       { ips: ['3.221.66.129','54.165.5.25'],      org: 'Netflix Inc.',         country: 'US', asn: 'AS2906'  },
+  'wikipedia.org':     { ips: ['208.80.154.224'],                  org: 'Wikimedia Foundation', country: 'US', asn: 'AS14907' },
+  'apple.com':         { ips: ['17.253.144.10','17.178.96.59'],    org: 'Apple Inc.',           country: 'US', asn: 'AS714'   },
+  'reddit.com':        { ips: ['151.101.129.140'],                 org: 'Fastly Inc.',          country: 'US', asn: 'AS54113' },
+};
+
+function parseTarget(raw) {
+  const val = raw.trim();
+  if (/^[\d.]+$/.test(val) || /^[\d./\-,]+$/.test(val)) {
+    return { type: 'ip', ip: val, domain: null };
+  }
+  let cleaned = val.replace(/^https?:\/\//i, '').replace(/^ftp:\/\//i, '');
+  const domainOnly = cleaned.split('/')[0].split(':')[0].toLowerCase().trim();
+  return { type: 'domain', domain: domainOnly, ip: null };
+}
+
+function resolveDomain(domain) {
+  const key = Object.keys(DNS_MOCK).find(k => k === domain || domain.endsWith('.' + k));
+  if (key) return DNS_MOCK[key];
+  // Deterministic fake IP for unknown domains
+  let h = 0;
+  for (let i = 0; i < domain.length; i++) h = (h * 31 + domain.charCodeAt(i)) & 0xffffffff;
+  const a = 10 + (Math.abs(h) % 230), b = Math.abs(h >> 8) % 256,
+        c = Math.abs(h >> 16) % 256, d = Math.abs(h >> 24) % 254 + 1;
+  return { ips: [`${a}.${b}.${c}.${d}`], org: 'Unknown Organization', country: '??', asn: 'AS' + (10000 + Math.abs(h) % 55000) };
+}
+
+let currentScanMode = 'ip';
+let currentResolvedIP = null;
+let currentDomain = null;
+
+function setScanMode(mode) {
+  currentScanMode = mode;
+  document.getElementById('modeIP').classList.toggle('active', mode === 'ip');
+  document.getElementById('modeURL').classList.toggle('active', mode === 'url');
+  const input = document.getElementById('scan-target');
+  const label = document.getElementById('targetLabel');
+  const dnsBox = document.getElementById('dnsResolutionBox');
+
+  // Toggle example chips
+  document.getElementById('ip-examples').style.display  = mode === 'ip'  ? 'flex' : 'none';
+  document.getElementById('url-examples').style.display = mode === 'url' ? 'flex' : 'none';
+
+  if (mode === 'url') {
+    label.textContent = 'TARGET URL / DOMAIN';
+    input.placeholder = 'e.g. github.com  or  https://example.com';
+    input.value = '';
+    dnsBox.style.display = 'block';
+    document.getElementById('dnsOriginal').textContent = '—';
+    document.getElementById('dnsResolved').textContent = 'enter a domain above';
+    document.getElementById('dnsResolved').style.color = 'var(--text-secondary)';
+    document.getElementById('dnsAllIPs').innerHTML = '';
+    document.getElementById('dnsStatus').innerHTML = '';
+    document.getElementById('whoisStrip').style.display = 'none';
+    input.focus();
+  } else {
+    label.textContent = 'TARGET IP / CIDR RANGE';
+    input.placeholder = 'e.g. 192.168.1.0/24';
+    input.value = '192.168.1.0/24';
+    dnsBox.style.display = 'none';
+  }
+  currentResolvedIP = null;
+  currentDomain = null;
+}
+
+function quickFill(val) {
+  const input = document.getElementById('scan-target');
+  input.value = val;
+  // trigger DNS preview if in URL mode
+  if (currentScanMode === 'url') {
+    const parsed = parseTarget(val);
+    if (parsed.type === 'domain') previewDNS(parsed.domain);
+  }
+  input.focus();
+}
+
+function previewDNS(domain) {
+  document.getElementById('dnsOriginal').textContent = domain;
+  document.getElementById('dnsResolved').textContent = 'resolving...';
+  document.getElementById('dnsResolved').style.color = 'var(--accent-orange)';
+  document.getElementById('dnsAllIPs').innerHTML = '';
+  setTimeout(() => {
+    const result = resolveDomain(domain);
+    currentResolvedIP = result.ips[0];
+    currentDomain = domain;
+    document.getElementById('dnsResolved').textContent = result.ips[0];
+    document.getElementById('dnsResolved').style.color = 'var(--accent-green)';
+    if (result.ips.length > 1) {
+      document.getElementById('dnsAllIPs').innerHTML =
+        result.ips.slice(1).map(ip => `<span class="dns-ip-badge">${ip}</span>`).join('');
+    }
+    document.getElementById('dnsStatus').innerHTML =
+      `<span class="badge authorized" style="font-size:10px">✓ RESOLVED</span>`;
+    const whois = document.getElementById('whoisStrip');
+    whois.style.display = 'flex';
+    whois.innerHTML = [
+      { label: 'ORG',      value: result.org },
+      { label: 'COUNTRY',  value: result.country },
+      { label: 'ASN',      value: result.asn },
+      { label: 'TOTAL IPs',value: result.ips.length },
+    ].map(w => `<div class="whois-item"><span class="whois-label">${w.label}</span><span class="whois-value">${w.value}</span></div>`).join('');
+  }, 600);
+}
+
+// Live DNS-as-you-type
+setTimeout(() => {
+  const inp = document.getElementById('scan-target');
+  if (inp) {
+    inp.addEventListener('input', () => {
+      if (currentScanMode !== 'url') return;
+      const val = inp.value.trim();
+      if (val.length < 4) return;
+      const parsed = parseTarget(val);
+      if (parsed.type === 'domain') previewDNS(parsed.domain);
+    });
+  }
+}, 400);
+
+// ===== SCAN SIMULATION =====
+function startScan() {
+  const rawTarget = document.getElementById('scan-target').value.trim();
+  if (!rawTarget) return;
+
+  const parsed = parseTarget(rawTarget);
+  let scanIP = rawTarget;
+  let domainLabel = null;
+
+  if (parsed.type === 'domain') {
+    const resolved = resolveDomain(parsed.domain);
+    scanIP = resolved.ips[0];
+    domainLabel = parsed.domain;
+    currentResolvedIP = scanIP;
+    currentDomain = parsed.domain;
+    document.getElementById('dnsResolutionBox').style.display = 'block';
+    previewDNS(parsed.domain);
+  }
+
+  document.getElementById('scan-target-display').textContent =
+    domainLabel ? `${domainLabel} → ${scanIP}` : scanIP;
+
+  const prog = document.getElementById('scanProgress');
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  prog.classList.add('active');
+  fill.style.width = '0%';
+
+  const steps = [
+    domainLabel ? `DNS resolved: ${domainLabel} → ${scanIP}` : 'Initializing scan engine...',
+    'Sending TCP SYN probes...', 'Service fingerprinting...', 'Banner grabbing...',
+    'OS detection...', 'Cross-referencing authorization DB...',
+    'Running signature matching...', 'Anomaly analysis...', 'Generating report...', 'Scan complete!'
+  ];
+  let pct = 0, step = 0;
+  const iv = setInterval(() => {
+    pct += 10;
+    fill.style.width = pct + '%';
+    text.textContent = steps[step++] || 'Scan complete!';
+    if (pct >= 100) { clearInterval(iv); setTimeout(() => prog.classList.remove('active'), 2000); }
+  }, 400);
+
+  const results = scanData.map(r => ({
+    ...r,
+    ip: domainLabel ? scanIP : r.ip,
+    domain: domainLabel || null,
+  }));
+  populateScanTable(results, domainLabel);
+}
+
+function runQuickScan() {
+  navigate('scanner');
+  document.querySelectorAll('.nav-item')[1].classList.add('active');
+  document.querySelectorAll('.nav-item')[0].classList.remove('active');
+  startScan();
+}
+
+// ===== HISTORY CHARTS =====
+function initHistoryCharts() {
+  if (window._histInit) return;
+  window._histInit = true;
+  const labels30 = Array.from({length:30}, (_,i) => `D-${30-i}`);
+
+  const c1 = document.getElementById('histTimelineChart')?.getContext('2d');
+  if (c1) new Chart(c1, {
+    type: 'line',
+    data: { labels: labels30, datasets: [
+      { label: 'Open', data: labels30.map(() => Math.floor(20+Math.random()*10)), borderColor: '#00f5ff', fill: false, tension: 0.4, borderWidth: 2 },
+      { label: 'Closed', data: labels30.map(() => Math.floor(5+Math.random()*5)), borderColor: '#00ff88', fill: false, tension: 0.4, borderWidth: 1 },
+      { label: 'Filtered', data: labels30.map(() => Math.floor(2+Math.random()*3)), borderColor: '#ff9500', fill: false, tension: 0.4, borderWidth: 1 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7ab8d4' } } }, scales: { x: { ticks: { color: '#7ab8d4', maxTicksLimit: 10 }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  const c2 = document.getElementById('heatmapChart')?.getContext('2d');
+  if (c2) new Chart(c2, {
+    type: 'bar',
+    data: { labels: ['10.0.1.x','10.0.2.x','10.0.3.x','192.168.1.x','172.16.x.x'],
+      datasets: [{ label: 'Risk Score', data: [45, 72, 88, 65, 31], backgroundColor: ['rgba(0,255,136,0.7)','rgba(255,149,0,0.7)','rgba(255,45,85,0.8)','rgba(255,149,0,0.6)','rgba(0,245,255,0.5)'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  const c3 = document.getElementById('wowChart')?.getContext('2d');
+  if (c3) new Chart(c3, {
+    type: 'line',
+    data: { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'],
+      datasets: [{ label: 'Exposed Services', data: [2210,2190,2230,2180,2150,2170,2130,2140,2160,2100,2120,2090], borderColor: '#ff9500', backgroundColor: 'rgba(255,149,0,0.1)', fill: true, tension: 0.4, borderWidth: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7ab8d4' } } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  const c4 = document.getElementById('freqChart')?.getContext('2d');
+  if (c4) new Chart(c4, {
+    type: 'bar',
+    data: { labels: ['22','80','443','3306','21','8080','25','53','5900','3389'],
+      datasets: [{ label: 'Hosts', data: [210,195,180,45,12,88,67,130,23,8], backgroundColor: 'rgba(0,245,255,0.6)', borderColor: '#00f5ff', borderWidth: 1 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  const c5 = document.getElementById('unauthHistChart')?.getContext('2d');
+  if (c5) new Chart(c5, {
+    type: 'bar',
+    data: { labels: labels30.filter((_,i)=>i%3===0),
+      datasets: [{ label: 'Unauthorized Events', data: Array.from({length:10},()=>Math.floor(2+Math.random()*8)), backgroundColor: 'rgba(255,45,85,0.6)', borderColor: '#ff2d55', borderWidth: 1 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+}
+
+// ===== IDS PAGE =====
+function initIDSPage() {
+  // Active alerts
+  const cont = document.getElementById('ids-alerts');
+  cont.innerHTML = idsAlerts.filter(a=>a.status==='active').map(a => `
+    <div class="threat-indicator ids-alert">
+      <div class="threat-dot"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:11px;flex:1">
+        <strong style="color:var(--accent-red)">[${a.id}]</strong> ${a.type} — Src: ${a.src} → Port: ${a.dport}
+      </span>
+      <span class="badge critical">${a.sev.toUpperCase()}</span>
+    </div>
+  `).join('');
+
+  // Full IDS table
+  const tbody = document.getElementById('ids-table');
+  tbody.innerHTML = idsAlerts.map(a => `
+    <tr class="ids-alert">
+      <td>${a.time}</td>
+      <td>${a.src}</td>
+      <td>${a.dport}</td>
+      <td>${a.type}</td>
+      <td style="color:var(--accent-cyan)">${a.method}</td>
+      <td><span class="badge ${a.sev === 'critical' ? 'critical' : a.sev === 'high' ? 'unauthorized' : 'conditional'}">${a.sev.toUpperCase()}</span></td>
+      <td><span class="badge ${a.status==='active'?'unauthorized':a.status==='mitigated'?'authorized':'conditional'}">${a.status.toUpperCase()}</span></td>
+      <td><button class="btn btn-danger" style="padding:3px 10px;font-size:10px">BLOCK</button></td>
+    </tr>
+  `).join('');
+
+  // Terminal log
+  const terminal = document.getElementById('ids-terminal');
+  const logs = [
+    { cls: 'log-error', msg: '[03:00:14] CRITICAL: Metasploit signature matched — Port 4444 (10.0.1.108)' },
+    { cls: 'log-error', msg: '[02:47:31] CRITICAL: Back Orifice trojan fingerprint — Port 31337' },
+    { cls: 'log-warn', msg: '[02:33:09] HIGH: CVE-2011-2523 vsftpd banner detected on port 21' },
+    { cls: 'log-info', msg: '[02:12:05] INFO: Baseline deviation +18.3% on subnet 10.0.3.0/24' },
+    { cls: 'log-warn', msg: '[01:58:44] HIGH: Z-score spike — 847 port states changed in 2s' },
+    { cls: 'log-info', msg: '[01:45:22] INFO: LSTM model detected temporal anomaly sequence' },
+    { cls: '', msg: '[01:30:11] OK: Signature DB updated — 4,891 signatures active' },
+    { cls: 'log-info', msg: '[01:22:03] INFO: K-means outlier detected — rogue device 10.0.3.12' },
+    { cls: '', msg: '[00:00:00] OK: Daily baseline recalibration complete' },
+  ];
+  terminal.innerHTML = logs.map((l,i) => `<div class="log-line ${l.cls}" style="animation-delay:${i*0.1}s">${l.msg}</div>`).join('');
+}
+
+// ===== SIGNATURE TABLE =====
+function populateSigTable() {
+  document.getElementById('sig-table').innerHTML = sigData.map(s => `
+    <tr>
+      <td style="font-family:'Share Tech Mono',monospace;color:var(--accent-cyan)">${s.id}</td>
+      <td>${s.cat}</td>
+      <td>${s.pattern}</td>
+      <td style="color:${s.cve!=='N/A'?'var(--accent-orange)':'var(--text-secondary)'}">${s.cve}</td>
+      <td><span class="badge ${s.sev==='critical'?'critical':s.sev==='high'?'unauthorized':'conditional'}">${s.sev.toUpperCase()}</span></td>
+      <td style="font-size:11px;color:var(--text-secondary)">${s.action}</td>
+      <td style="color:var(--text-secondary)">${s.last}</td>
+      <td><span class="badge authorized">ACTIVE</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===== ANOMALY CHART =====
+function initAnomalyChart() {
+  if (window._anomalyInit) return;
+  window._anomalyInit = true;
+  const c = document.getElementById('anomalyChart')?.getContext('2d');
+  if (!c) return;
+  const labels = Array.from({length:24}, (_,i)=>`${String(i).padStart(2,'0')}:00`);
+  new Chart(c, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Normal Baseline', data: labels.map(()=>20+Math.random()*5), borderColor: 'rgba(0,245,255,0.5)', borderDash: [5,5], fill: false, tension: 0.3 },
+      { label: 'Observed', data: [20,21,19,22,20,18,19,21,22,20,19,21,22,20,19,80,85,21,20,19,21,22,20,21], borderColor: '#ff2d55', backgroundColor: 'rgba(255,45,85,0.1)', fill: true, tension: 0.3, borderWidth: 2 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7ab8d4' } } }, scales: { x: { ticks: { color: '#7ab8d4', maxTicksLimit: 8 }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { ticks: { color: '#7ab8d4' }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+  });
+
+  const types = [
+    { name: 'Port Creep (Slow Attack)', algo: 'LSTM Neural Network', count: 2, sev: 'medium' },
+    { name: 'Scan Pattern Anomaly', algo: 'Z-Score Analysis', count: 5, sev: 'high' },
+    { name: 'Time-of-Day Anomaly', algo: 'Markov Chain Model', count: 1, sev: 'critical' },
+    { name: 'New Host Detection', algo: 'K-Means Clustering', count: 1, sev: 'high' },
+    { name: 'High Entropy Response', algo: 'Isolation Forest', count: 3, sev: 'medium' },
+  ];
+  document.getElementById('anomaly-types').innerHTML = types.map(t => `
+    <div class="alert-item ${t.sev}" style="margin-bottom:6px">
+      <div class="alert-body">
+        <div class="alert-title">${t.name}</div>
+        <div class="alert-meta">Algorithm: ${t.algo}</div>
+      </div>
+      <div style="text-align:right">
+        <span class="badge ${t.sev==='critical'?'critical':t.sev==='high'?'unauthorized':'conditional'}">${t.sev.toUpperCase()}</span>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-secondary);margin-top:4px">${t.count} events</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== AUTH TABLE =====
+function populateAuthTable() {
+  document.getElementById('auth-table').innerHTML = authPolicies.map(p => `
+    <tr>
+      <td style="font-family:'Orbitron',monospace;color:var(--accent-cyan)">${p.port}</td>
+      <td>${p.service}</td>
+      <td style="font-family:'Share Tech Mono',monospace">${p.range}</td>
+      <td><span class="badge ${p.status}">${p.status.toUpperCase()}</span></td>
+      <td class="risk-${p.risk}">${p.risk.toUpperCase()}</td>
+      <td>${p.owner}</td>
+      <td style="color:var(--text-secondary)">${p.reviewed}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:10px;padding:3px 8px">EDIT</button>
+        <button class="btn btn-danger" style="font-size:10px;padding:3px 8px">REVOKE</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== NETWORK MAP =====
+function drawNetworkMap() {
+  const canvas = document.getElementById('networkCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 300;
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#041525';
+  ctx.fillRect(0, 0, W, H);
+
+  const nodes = [
+    { x: W/2, y: H/2, label: 'CORE SWITCH', color: '#00f5ff', r: 20, type: 'switch' },
+    { x: W/2-200, y: 80, label: '10.0.1.105\nWeb Server', color: '#00ff88', r: 14, type: 'server' },
+    { x: W/2+200, y: 80, label: '10.0.1.120\nDB Server', color: '#ff9500', r: 14, type: 'server' },
+    { x: W/2-250, y: H/2+50, label: '10.0.2.55\nWinServer', color: '#00f5ff', r: 14, type: 'server' },
+    { x: W/2+250, y: H/2+50, label: '10.0.1.108\nRogue⚠', color: '#ff2d55', r: 14, type: 'rogue' },
+    { x: W/2, y: H-60, label: '10.0.3.12\nIoT Device', color: '#ffd60a', r: 10, type: 'iot' },
+    { x: W/2-100, y: H-100, label: '10.0.1.130\nFTP⚠', color: '#ff2d55', r: 12, type: 'threat' },
+    { x: W/2+100, y: H-100, label: '10.0.3.44\nWorkstation', color: '#00f5ff', r: 12, type: 'workstation' },
+  ];
+
+  // Draw connections
+  nodes.slice(1).forEach(n => {
+    ctx.beginPath();
+    ctx.moveTo(W/2, H/2);
+    ctx.lineTo(n.x, n.y);
+    ctx.strokeStyle = n.color === '#ff2d55' ? 'rgba(255,45,85,0.4)' : 'rgba(0,245,255,0.2)';
+    ctx.lineWidth = 1;
+    if (n.color === '#ff2d55') {
+      ctx.setLineDash([4, 4]);
+    } else {
+      ctx.setLineDash([]);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fillStyle = n.color + '33';
+    ctx.fill();
+    ctx.strokeStyle = n.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    if (n.color === '#ff2d55') {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r + 8, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,45,85,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    n.label.split('\n').forEach((line, i) => {
+      ctx.fillStyle = n.color;
+      ctx.font = `${i===0?'bold ':''} 11px "Share Tech Mono", monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(line, n.x, n.y + n.r + 16 + i * 14);
+    });
+  });
+}
+
+// ===== REPORTS =====
+function populateReports() {
+  const reports = [
+    { name: 'Weekly Security Summary', date: '2025-02-20', format: 'PDF', size: '2.4 MB' },
+    { name: 'Unauthorized Ports Audit', date: '2025-02-18', format: 'CSV', size: '145 KB' },
+    { name: 'CVE Vulnerability Report', date: '2025-02-15', format: 'JSON', size: '890 KB' },
+    { name: 'PCI-DSS Compliance Evidence', date: '2025-02-10', format: 'PDF', size: '5.1 MB' },
+    { name: 'Monthly Attack Timeline', date: '2025-02-01', format: 'PDF', size: '3.7 MB' },
+  ];
+  document.getElementById('report-list').innerHTML = reports.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600">${r.name}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-secondary)">${r.date} · ${r.format} · ${r.size}</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:10px;padding:4px 12px">⬇ DL</button>
+    </div>
+  `).join('');
+
+  const tests = [
+    { type: 'TCP SYN Scan', detected: 'YES', time: '< 5s', fp: '0' },
+    { type: 'Slow Port Creep', detected: 'YES', time: '18h', fp: '0' },
+    { type: 'Metasploit Backdoor', detected: 'YES', time: '< 1s', fp: '0' },
+    { type: 'vsftpd CVE Exploit', detected: 'YES', time: '< 5s', fp: '0' },
+    { type: 'Rogue Device', detected: 'YES', time: '< 2m', fp: '0' },
+    { type: 'Time-of-Day Attack', detected: 'YES', time: '< 6m', fp: '0' },
+  ];
+  document.getElementById('test-results').innerHTML = tests.map(t => `
+    <tr>
+      <td>${t.type}</td>
+      <td><span class="badge authorized">✓ ${t.detected}</span></td>
+      <td style="color:var(--accent-cyan)">${t.time}</td>
+      <td style="color:var(--accent-green)">${t.fp}</td>
+    </tr>
+  `).join('');
+}
+
+function exportReport() {
+  alert('Report exported: ipsas_security_report_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
+
+// ===== INIT =====
+initDashboard();
+
+// Live scan counter simulation
+setInterval(() => {
+  const el = document.getElementById('last-scan');
+  if (el) {
+    const mins = Math.floor(Math.random() * 5) + 1;
+    el.textContent = mins + ' min ago';
+  }
+}, 30000);
+</script>
+
+</body>
+</html>
+
+// Keyboard shortcut — no demo mode
+</script>
+
+</body>
+</html>
